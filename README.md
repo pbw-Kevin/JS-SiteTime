@@ -43,7 +43,7 @@ siteTime();
 	`<script src="..."></script>`  
 	其中省略部分为JS文件存储的绝对/相对路径。  
 	部分框架或博客主题需要通过特殊配置引入，相关内容请阅读对应文档。  
-	比如这篇文章背后的Hexo Fluid可以通过配置项中的`custom_js`引入。
+	比如Hexo Fluid可以通过配置项中的`custom_js`引入。
 5. 在HTML文档的任意位置插入如下内容，即可显示网站运行时间。  
 	`<span class="sitetime"></span>`
 
