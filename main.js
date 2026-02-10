@@ -1,24 +1,60 @@
-function siteTime(){
-    window.setTimeout("siteTime()", 1000);
-    const Jan=0,Feb=1,Mar=2,Apr=3,May=4,Jun=5,Jul=6,Aug=7,Sept=8,Oct=9,Nov=10,Dec=11, today = new Date();
-	var UseYear = 1; 
-    var t = Date.UTC(2024,Jun,23,00,00,00,000); //GMT Jun 1,2024 00:00:00.000
-    var diff = today.getTime()-t-today.getTimezoneOffset()*60000;
-    diff = Math.floor(diff/1000);
-    var diffSeconds = diff%60; diff = Math.floor(diff/60);
-    var diffMinutes = diff%60; diff = Math.floor(diff/60);
-    var diffHours = diff%24; diff = Math.floor(diff/24);
-	var diffDays = 0, diffYears = 0;
-    if(UseYear){diffDays = diff%365; diffYears = Math.floor(diff/365);}
-	else diffDays = diff;
-	var f = 0, displayString = "";
-	if(diffYears || f) displayString += diffYears+" 年 ", f=1;
-	if(diffDays || f) displayString += diffDays+" 天 ", f=1;
-	if(diffHours || f) displayString += diffHours+" 小时 ", f=1;
-	if(diffMinutes || f) displayString += diffMinutes+" 分钟 ", f=1;
-	displayString += diffSeconds+" 秒";
-    document.querySelectorAll(".sitetime").forEach(function(currentValue){
-        currentValue.innerHTML = displayString;
-    });
-}
-siteTime();
+const registerSiteTime = (() => {
+    var unitsI18N = {
+        'en-us': {
+            pluralSuffix: 's',
+            units: [
+                { name: 'milisecond', carryFactor: 1000, },
+                { name: 'second', carryFactor: 60, },
+                { name: 'minute', carryFactor: 60, },
+                { name: 'hour', carryFactor: 24, },
+                { name: 'day', carryFactor: 365, },
+                { name: 'year', carryFactor: 100, },
+            ]
+        },
+        'zh-cn': {
+            pluralSuffix: '',
+            units: [
+                { name: '毫秒', carryFactor: 1000, },
+                { name: '秒', carryFactor: 60, },
+                { name: '分钟', carryFactor: 60, },
+                { name: '小时', carryFactor: 24, },
+                { name: '天', carryFactor: 365, },
+                { name: '年', carryFactor: 100, },
+            ]
+        }
+    }
+    var startFromDate = Date.now()
+    function siteTime(displayFrom, displayTo, units){
+        var diff = Math.abs(Date.now() - startFromDate)
+        var result = []
+        for (var i = 0; i < units.units.length; i++){
+            if (diff <= 0) break
+            var unit = units.units[i]
+            if (i >= displayTo) {
+                result.push(diff + ' ' + unit.name + (diff == 1 ? '' : units.pluralSuffix))
+                break
+            }
+            var unitValue = diff % unit.carryFactor
+            diff = Math.floor(diff / unit.carryFactor)
+            if (i >= displayFrom && unitValue > 0) {
+                result.push(unitValue + ' ' + unit.name + (unitValue == 1 ? '' : units.pluralSuffix))
+            }
+        }
+        result.reverse()
+        var resultStr = result.join(' ')
+        document.querySelectorAll('.site-time').forEach(el => el.innerText = resultStr)
+    }
+    return function registerSiteTime(
+        startFrom,
+        displayFrom,
+        displayTo,
+        interval = 1000,
+        units = unitsI18N["zh-cn"]
+    ){
+        startFromDate = new Date(startFrom)
+        siteTime(displayFrom, displayTo, units)
+        setInterval(siteTime, interval, displayFrom, displayTo, units)
+    }
+})()
+
+registerSiteTime("2024/6/23 00:00:00", 1, 5)

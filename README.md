@@ -3,48 +3,99 @@ There are no README for other languages support. You can translate the content b
 
 # JS-SiteTime
 
-一款基于JavaScript的，用于在网页中实时显示网站运行时间的小插件。  
+一款基于 JavaScript 的，用于在网页中实时显示网站运行时间的小插件。  
 [博客](//blog.air-kevin.rf.gd/2024/JS-SiteTime) [实验室](//labs.air-kevin.rf.gd/repos/JS-SiteTime/)
 
 ## 源代码
 ``` js
-function siteTime(){
-    window.setTimeout("siteTime()", 1000);
-    const Jan=0,Feb=1,Mar=2,Apr=3,May=4,Jun=5,Jul=6,Aug=7,Sept=8,Oct=9,Nov=10,Dec=11, today = new Date();
-	var UseYear = 1; 
-    var t = Date.UTC(2024,Jun,23,00,00,00,000); //GMT Jun 1,2024 00:00:00.000
-    var diff = today.getTime()-t-today.getTimezoneOffset()*60000;
-    diff = Math.floor(diff/1000);
-    var diffSeconds = diff%60; diff = Math.floor(diff/60);
-    var diffMinutes = diff%60; diff = Math.floor(diff/60);
-    var diffHours = diff%24; diff = Math.floor(diff/24);
-	var diffDays = 0, diffYears = 0;
-    if(UseYear){diffDays = diff%365; diffYears = Math.floor(diff/365);}
-	else diffDays = diff;
-	var f = 0, displayString = "";
-	if(diffYears || f) displayString += diffYears+" 年 ", f=1;
-	if(diffDays || f) displayString += diffDays+" 天 ", f=1;
-	if(diffHours || f) displayString += diffHours+" 小时 ", f=1;
-	if(diffMinutes || f) displayString += diffMinutes+" 分钟 ", f=1;
-	displayString += diffSeconds+" 秒";
-    document.querySelectorAll(".sitetime").forEach(function(currentValue){
-        currentValue.innerHTML = displayString;
-    });
-}
-siteTime();
+const registerSiteTime = (() => {
+    var unitsI18N = {
+        'en-us': {
+            pluralSuffix: 's',
+            units: [
+                { name: 'milisecond', carryFactor: 1000, },
+                { name: 'second', carryFactor: 60, },
+                { name: 'minute', carryFactor: 60, },
+                { name: 'hour', carryFactor: 24, },
+                { name: 'day', carryFactor: 365, },
+                { name: 'year', carryFactor: 100, },
+            ]
+        },
+        'zh-cn': {
+            pluralSuffix: '',
+            units: [
+                { name: '毫秒', carryFactor: 1000, },
+                { name: '秒', carryFactor: 60, },
+                { name: '分钟', carryFactor: 60, },
+                { name: '小时', carryFactor: 24, },
+                { name: '天', carryFactor: 365, },
+                { name: '年', carryFactor: 100, },
+            ]
+        }
+    }
+    var startFromDate = Date.now()
+    function siteTime(displayFrom, displayTo, units){
+        var diff = Math.abs(Date.now() - startFromDate)
+        var result = []
+        for (var i = 0; i < units.units.length; i++){
+            if (diff <= 0) break
+            var unit = units.units[i]
+            if (i >= displayTo) {
+                result.push(diff + ' ' + unit.name + (diff == 1 ? '' : units.pluralSuffix))
+                break
+            }
+            var unitValue = diff % unit.carryFactor
+            diff = Math.floor(diff / unit.carryFactor)
+            if (i >= displayFrom && unitValue > 0) {
+                result.push(unitValue + ' ' + unit.name + (unitValue == 1 ? '' : units.pluralSuffix))
+            }
+        }
+        result.reverse()
+        var resultStr = result.join(' ')
+        document.querySelectorAll('.site-time').forEach(el => el.innerText = resultStr)
+    }
+    return function registerSiteTime(
+        startFrom,
+        displayFrom,
+        displayTo,
+        interval = 1000,
+        units = unitsI18N["zh-cn"]
+    ){
+        startFromDate = new Date(startFrom)
+        siteTime(displayFrom, displayTo, units)
+        setInterval(siteTime, interval, displayFrom, displayTo, units)
+    }
+})()
+
+registerSiteTime("2024/6/23 00:00:00", 1, 5)
 ```
 
 ## 使用方法
-1. 下载/复制源码到本地以进行修改
-2. 修改`UseYear`参数  
-	设为`1`或`true`，则会显示年数，而设为`0`或`false`，则不会显示年数，而会将相应天数合并显示。
-3. 修改开始时间（`var t=`后面的时间）（月份部分为对应月份的英文缩写）
-4. 在HTML文档的任意位置（最好是`<head>`标签内或`<body>`标签的尾部）引入文件：  
-	`<script src="..."></script>`  
-	其中省略部分为JS文件存储的绝对/相对路径。  
-	部分框架或博客主题需要通过特殊配置引入，相关内容请阅读对应文档。  
-	比如Hexo Fluid可以通过配置项中的`custom_js`引入。
-5. 在HTML文档的任意位置插入如下内容，即可显示网站运行时间。  
-	`<span class="sitetime"></span>`
+1. 修改自定义参数。（就是 `registerSiteTime` 后面一串）
+
+   其中第一个参数填入开始时间的字符串即可。
+
+   后两个参数指定显示的单位范围。对照表如下：
+
+   | 数字 | 时间单位 |
+   | ---- | -------- |
+   | `1` | 秒 |
+   | `2` | 分钟 |
+   | `3` | 小时 |
+   | `4` | 天 |
+   | `5` | 年 |
+
+   例如填入 `1, 4` 会显示 `xx 天 xx 小时 xx 分钟 xx 秒`。
+   
+   第四个参数为可选参数，指定触发间隔，单位毫秒，默认值 `1000`。通常根据最小时间单位决定。例如第二个参数为 `1`（秒）就不用填这个参数。第二个参数为 `4`（天）就将这个参数填为 `86400000`。
+
+   第五个参数为自定义单位参数，用于 i18n。有需求的可以自己看代码。通常不用填。
+2. 在 HTML 文档的任意位置（最好是 `<body>` 标签的尾部）引入文件：  
+   `<script src="..."></script>`  
+   其中省略部分为 JS 文件存储的绝对/相对路径。  
+   部分框架或博客主题需要通过特殊配置引入，相关内容请阅读对应文档。  
+   比如 Hexo Fluid 可以通过配置项中的 `custom_js` 引入。
+3. 在 HTML 文档的任意位置插入如下内容，即可显示网站运行时间。  
+   `<span class="site-time"></span>`
 
 附注及更多内容详见博客。
