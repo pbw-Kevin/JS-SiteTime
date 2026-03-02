@@ -24,7 +24,7 @@ const registerSiteTime = (() => {
         }
     }
     var startFromDate = Date.now()
-    function siteTime(displayFrom, displayTo, units){
+    function siteTime(displayFrom, displayTo, el, units){
         var diff = Math.abs(Date.now() - startFromDate)
         var result = []
         for (var i = 0; i < units.units.length; i++){
@@ -40,21 +40,27 @@ const registerSiteTime = (() => {
                 result.push(unitValue + ' ' + unit.name + (unitValue == 1 ? '' : units.pluralSuffix))
             }
         }
+        if (result.length == 0) {
+            var unit = units.units[Math.min(displayFrom, units.units.length - 1)]
+            result.push('0 ' + unit.name + units.pluralSuffix)
+        }
         result.reverse()
         var resultStr = result.join(' ')
-        document.querySelectorAll('.site-time').forEach(el => el.innerText = resultStr)
+        document.querySelectorAll(el).forEach(dom => dom.innerText = resultStr)
     }
     return function registerSiteTime(
         startFrom,
         displayFrom,
         displayTo,
         interval = 1000,
+        el = '.site-time',
         units = unitsI18N["zh-cn"]
     ){
         startFromDate = new Date(startFrom)
-        siteTime(displayFrom, displayTo, units)
-        setInterval(siteTime, interval, displayFrom, displayTo, units)
+        siteTime(displayFrom, displayTo, el, units)
+        if (interval) return setInterval(siteTime, interval, displayFrom, displayTo, el, units)
+        else return 0
     }
 })()
 
-registerSiteTime("2024/6/23 00:00:00", 1, 5)
+var siteTime = registerSiteTime("2026/1/1 00:00:00", 1, 5)

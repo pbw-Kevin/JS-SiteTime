@@ -34,7 +34,7 @@ const registerSiteTime = (() => {
         }
     }
     var startFromDate = Date.now()
-    function siteTime(displayFrom, displayTo, units){
+    function siteTime(displayFrom, displayTo, el, units){
         var diff = Math.abs(Date.now() - startFromDate)
         var result = []
         for (var i = 0; i < units.units.length; i++){
@@ -50,24 +50,30 @@ const registerSiteTime = (() => {
                 result.push(unitValue + ' ' + unit.name + (unitValue == 1 ? '' : units.pluralSuffix))
             }
         }
+        if (result.length == 0) {
+            var unit = units.units[Math.min(displayFrom, units.units.length - 1)]
+            result.push('0 ' + unit.name + units.pluralSuffix)
+        }
         result.reverse()
         var resultStr = result.join(' ')
-        document.querySelectorAll('.site-time').forEach(el => el.innerText = resultStr)
+        document.querySelectorAll(el).forEach(dom => dom.innerText = resultStr)
     }
     return function registerSiteTime(
         startFrom,
         displayFrom,
         displayTo,
         interval = 1000,
+        el = '.site-time',
         units = unitsI18N["zh-cn"]
     ){
         startFromDate = new Date(startFrom)
-        siteTime(displayFrom, displayTo, units)
-        setInterval(siteTime, interval, displayFrom, displayTo, units)
+        siteTime(displayFrom, displayTo, el, units)
+        if (interval) return setInterval(siteTime, interval, displayFrom, displayTo, el, units)
+        else return 0
     }
 })()
 
-registerSiteTime("2024/6/23 00:00:00", 1, 5)
+var siteTime = registerSiteTime("2026/1/1 00:00:00", 1, 5)
 ```
 
 ## 使用方法
@@ -87,9 +93,13 @@ registerSiteTime("2024/6/23 00:00:00", 1, 5)
 
    例如填入 `1, 4` 会显示 `xx 天 xx 小时 xx 分钟 xx 秒`。
    
-   第四个参数为可选参数，指定触发间隔，单位毫秒，默认值 `1000`。通常根据最小时间单位决定。例如第二个参数为 `1`（秒）就不用填这个参数。第二个参数为 `4`（天）就将这个参数填为 `86400000`。
+   第四个参数为可选参数，指定触发间隔，单位毫秒，默认值 `1000`。通常根据最小时间单位决定。  
+   例如第二个参数为 `1`（秒）就不用填这个参数。第二个参数为 `4`（天）就将这个参数填为 `86400000`。  
+   特别地，如果不希望显示时间变化（即希望锁定时间），就将这个参数设为 `0`。
 
-   第五个参数为自定义单位参数，用于 i18n。有需求的可以自己看代码。通常不用填。
+   第五个参数为可选参数，指定了显示时间的元素选择器，默认为 `".site-time"`。如果需要在其它元素挂载时间，修改这个参数。通常不用填。
+
+   第六个参数为可选参数，可以自定义文字，通常用于 i18n。有需求的可以自己看代码。通常不用填。
 2. 在 HTML 文档的任意位置（最好是 `<body>` 标签的尾部）引入文件：  
    `<script src="..."></script>`  
    其中省略部分为 JS 文件存储的绝对/相对路径。  
